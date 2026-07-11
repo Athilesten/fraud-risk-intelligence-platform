@@ -1,0 +1,31 @@
+services:
+  fraud-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: fraud_fastapi
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+    environment:
+      PYTHONPATH: /app/src
+    restart: unless-stopped
+
+  fraud-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    container_name: fraud_streamlit_dashboard
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+      - ./hadoop:/app/hadoop
+    environment:
+      API_BASE_URL: http://fraud-api:8000
+      PYTHONPATH: /app/src
+    depends_on:
+      - fraud-api
+    restart: unless-stopped

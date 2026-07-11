@@ -1,0 +1,31 @@
+{
+    "retrained_at": "2026-07-10 20:21:17",
+    "dataset_path": "/opt/fraud-project/data/raw/paysim.csv",
+    "training_rows": 100000,
+    "features": [
+        "step",
+        "type",
+        "amount",
+        "oldbalanceOrg",
+        "newbalanceOrig",
+        "oldbalanceDest",
+        "newbalanceDest",
+        "isFlaggedFraud",
+        "balance_diff_orig",
+        "balance_diff_dest",
+        "amount_to_oldbalance_ratio",
+        "is_zero_balance_after_txn"
+    ],
+    "target": "isFraud",
+    "best_model_name": "random_forest",
+    "best_metrics": {
+        "roc_auc": 0.9999999999999999,
+        "pr_auc": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+    },
+    "best_selection_score": 1.0,
+    "model_path": "/opt/fraud-project/models/fraud_model.pkl",
+    "encoder_path": "/opt/fraud-project/models/label_encoder.pkl"
+}
