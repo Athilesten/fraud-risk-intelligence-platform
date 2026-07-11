@@ -234,3 +234,95 @@ Batch prediction history
 Real-time simulator monitoring
 Kafka streaming monitoring
 CSV download
+
+## Production-Style Docker Stack
+
+This project includes a production-style local Docker stack with:
+
+- FastAPI fraud scoring service
+- Streamlit risk intelligence dashboard
+- PostgreSQL prediction logging database
+- Prometheus metrics collection
+- Grafana monitoring dashboard
+- API key authentication
+- Structured JSON logging
+- Pytest unit tests
+- GitHub Actions CI workflow
+
+### Environment Setup
+
+Create a local `.env` file using `.env.example`:
+
+```bash
+POSTGRES_USER=fraud_user
+POSTGRES_PASSWORD=fraud_password
+POSTGRES_DB=fraud_db
+FRAUD_API_KEY=dev_fraud_api_key_123
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=admin
+API_BASE_URL=http://fraud-api:8000
+
+
+| Service             | URL                                                            |
+| ------------------- | -------------------------------------------------------------- |
+| FastAPI Health      | [http://localhost:8000/health](http://localhost:8000/health)   |
+| FastAPI Docs        | [http://localhost:8000/docs](http://localhost:8000/docs)       |
+| Prometheus Metrics  | [http://localhost:8000/metrics](http://localhost:8000/metrics) |
+| Streamlit Dashboard | [http://localhost:8501](http://localhost:8501)                 |
+| Prometheus UI       | [http://localhost:9090](http://localhost:9090)                 |
+| Grafana UI          | [http://localhost:3000](http://localhost:3000)                 |
+
+PI Key Authentication
+
+Protected endpoints require:
+
+X-API-Key: dev_fraud_api_key_123
+
+Protected endpoints:
+
+POST /predict
+POST /predict_batch
+GET /prediction_logs
+GET /monitoring/metrics
+
+Public endpoints:
+
+GET /
+GET /health
+GET /metrics
+Prometheus + Grafana Monitoring
+
+FastAPI exposes Prometheus metrics at:
+
+http://localhost:8000/metrics
+
+Prometheus scrapes the API and Grafana visualizes:
+
+Total API requests
+Request rate
+Average latency
+95th percentile latency
+Total fraud predictions
+Predictions by risk level
+Predictions by final decision
+Run Unit Tests
+python -m pytest -v
+Stop Stack
+docker compose -f docker-compose.app.yml down
+
+Save and close.
+
+---
+
+# Step 38.9: Run tests locally
+
+Run:
+
+```cmd
+python -m pytest -v
+
+Expected:
+
+6 passed
+
+

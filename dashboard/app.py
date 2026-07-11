@@ -28,6 +28,13 @@ API_BASE_URL = os.environ.get("API_BASE_URL", "http://127.0.0.1:8000")
 PREDICT_API_URL = f"{API_BASE_URL}/predict"
 BATCH_API_URL = f"{API_BASE_URL}/predict_batch"
 HEALTH_API_URL = f"{API_BASE_URL}/health"
+LOGS_API_URL = f"{API_BASE_URL}/prediction_logs"
+METRICS_API_URL = f"{API_BASE_URL}/monitoring/metrics"
+
+API_KEY = os.environ.get("FRAUD_API_KEY", "dev_fraud_api_key_123")
+API_HEADERS = {
+    "X-API-Key": API_KEY
+}
 
 
 # -------------------------------
@@ -291,7 +298,8 @@ with col2:
 
     if st.button("Predict Fraud Risk", key="single_prediction_button"):
         try:
-            response = requests.post(PREDICT_API_URL, json=transaction, timeout=30)
+            response = requests.post(PREDICT_API_URL, json=transaction,headers=API_HEADERS,
+ timeout=30)
 
             if response.status_code == 200:
                 result = response.json()
@@ -603,7 +611,7 @@ if batch_uploaded_file is not None:
                         response = requests.post(
                             BATCH_API_URL,
                             json=payload,
-                            timeout=120,
+   			    headers=API_HEADERS, 			    timeout=120,
                         )
 
                         if response.status_code == 200:
@@ -968,7 +976,155 @@ else:
         file_name="kafka_scored_transactions.csv",
         mime="text/csv",
         key="download_kafka_scored_transactions_unique"
-    )    
+    )
+    # -------------------------------
+# API Monitoring Metrics
+# -------------------------------
+
+st.header("API Monitoring Metrics")
+
+st.write(
+    "This section shows request count, error count, and latency metrics from the FastAPI service."
+)
+
+if st.button("Load API Monitoring Metrics"):
+    try:
+        response = requests.get(
+            METRICS_API_URL,
+            headers=API_HEADERS,
+            timeout=10
+        )
+
+        response.raise_for_status()
+
+        metrics_data = response.json()
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        col1.metric("Total Requests", metrics_data.get("total_requests", 0))
+        col2.metric("Total Errors", metrics_data.get("total_errors", 0))
+        col3.metric(
+            "Avg Latency",
+            f"{metrics_data.get('avg_latency_ms', 0)} ms"
+        )
+        col4.metric(
+            "Max Latency",
+            f"{metrics_data.get('max_latency_ms', 0)} ms"
+        )
+
+        endpoint_data = metrics_data.get("by_endpoint", [])
+
+        if endpoint_data:
+            endpoint_df = pd.DataFrame(endpoint_data)
+
+            st.subheader("Endpoint-wise API Metrics")
+            st.dataframe(endpoint_df, use_container_width=True)
+
+            fig = px.bar(
+                endpoint_df,
+                x="endpoint",
+                y="avg_latency_ms",
+                title="Average Latency by Endpoint"
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+        else:
+            st.info("No endpoint metrics available yet.")
+
+    except Exception as e:
+        st.error(f"Failed to load API monitoring metrics: {e}")      
+# -------------------------------
+# PostgreSQL Prediction Logs
+# -------------------------------
+
+st.header("PostgreSQL Prediction Logs")
+
+st.write(
+    "This section shows the latest fraud prediction records saved in PostgreSQL."
+)
+
+log_limit = st.slider(
+    "Number of latest prediction logs",
+    min_value=5,
+    max_value=100,
+    value=20,
+    step=5
+)
+
+if st.button("Load PostgreSQL Prediction Logs"):
+    try:
+        response = requests.get(
+            f"{LOGS_API_URL}?limit={log_limit}",
+            headers=API_HEADERS,
+	    timeout=10
+        )
+
+        response.raise_for_status()
+
+        logs_data = response.json()
+        logs = logs_data.get("logs", [])
+
+        if not logs:
+            st.info("No prediction logs found yet. Run one prediction first.")
+        else:
+            logs_df = pd.DataFrame(logs)
+
+            logs_df["fraud_probability"] = pd.to_numeric(
+                logs_df["fraud_probability"],
+                errors="coerce"
+            )
+
+            logs_df["amount"] = pd.to_numeric(
+                logs_df["amount"],
+                errors="coerce"
+            )
+
+            total_logs = len(logs_df)
+            high_risk_count = (logs_df["risk_level"] == "HIGH").sum()
+            manual_review_count = (
+                logs_df["final_decision"].astype(str).str.contains(
+                    "MANUAL REVIEW",
+                    case=False,
+                    na=False
+                )
+            ).sum()
+
+            average_probability = logs_df["fraud_probability"].mean()
+
+            col1, col2, col3, col4 = st.columns(4)
+
+            col1.metric("Logs Loaded", total_logs)
+            col2.metric("High Risk", int(high_risk_count))
+            col3.metric("Manual Review", int(manual_review_count))
+            col4.metric("Avg Fraud Probability", f"{average_probability:.4f}")
+
+            st.subheader("Latest PostgreSQL Prediction Records")
+
+            st.dataframe(
+                logs_df,
+                use_container_width=True
+            )
+
+            if "risk_level" in logs_df.columns:
+                st.subheader("Risk Level Distribution")
+
+                risk_counts = logs_df["risk_level"].value_counts().reset_index()
+                risk_counts.columns = ["risk_level", "count"]
+
+                fig = px.bar(
+                    risk_counts,
+                    x="risk_level",
+                    y="count",
+                    title="Prediction Logs by Risk Level"
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+    except Exception as e:
+        st.error(f"Failed to load PostgreSQL prediction logs: {e}")
+
+   
     # -------------------------------
 # Delta Lake Storage Monitoring
 # -------------------------------

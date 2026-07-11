@@ -1,3 +1,5 @@
+.env
+logs/
 venv/
 __pycache__/
 *.pyc
@@ -16,8 +18,4 @@ hadoop/
 *.zip
 
 models/*.pkl
-
-.env
-*.log
-.ipynb_checkpoints/
 requirements.txt

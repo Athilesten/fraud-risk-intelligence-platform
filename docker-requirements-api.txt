@@ -8,3 +8,5 @@ joblib
 shap
 pydantic
 mlflow
+psycopg2-binary
+prometheus-client
