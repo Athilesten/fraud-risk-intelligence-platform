@@ -20,3 +20,4 @@ models/*.pkl
 .env
 *.log
 .ipynb_checkpoints/
+requirements.txt
