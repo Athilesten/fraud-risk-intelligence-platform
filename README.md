@@ -325,4 +325,33 @@ Expected:
 
 6 passed
 
+## Documentation
 
+Additional project documentation:
+
+- [Production Architecture](docs/production_architecture.md)
+- [Interview Explanation](docs/interview_explanation.md)
+
+## Final Project Summary
+
+This project is a production-style Real-Time Fraud Detection and Risk Intelligence Platform.
+
+It includes:
+
+- Machine learning fraud prediction
+- Rule-based fraud risk scoring
+- FastAPI backend
+- Streamlit dashboard
+- PostgreSQL prediction logging
+- Kafka streaming
+- Spark Structured Streaming
+- Delta Lake storage
+- MLflow experiment tracking
+- Airflow retraining pipeline
+- Docker Compose production stack
+- API key authentication
+- Structured JSON logging
+- Prometheus metrics
+- Grafana monitoring dashboard
+- Pytest unit tests
+- GitHub Actions CI
