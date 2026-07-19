@@ -14,7 +14,8 @@ from sklearn.metrics import (
     average_precision_score,
     precision_score,
     recall_score,
-    f1_score
+    f1_score,
+    confusion_matrix
 )
 from sklearn.ensemble import RandomForestClassifier
 
@@ -78,6 +79,63 @@ def selection_score(metrics):
     Final Score = 70% PR-AUC + 30% Recall
     """
     return (0.7 * metrics["pr_auc"]) + (0.3 * metrics["recall"])
+
+
+def create_validation_split(X, y):
+    """
+    Prefer a time-aware validation split because fraud patterns drift.
+    Falls back to stratified random split if the temporal split loses a class.
+    """
+
+    if "step" in X.columns:
+        validation_df = X.copy()
+        validation_df["__target"] = y.values
+        validation_df = validation_df.sort_values("step")
+
+        split_index = int(len(validation_df) * 0.8)
+        train_df = validation_df.iloc[:split_index]
+        test_df = validation_df.iloc[split_index:]
+
+        if train_df["__target"].nunique() == 2 and test_df["__target"].nunique() == 2:
+            return (
+                train_df.drop(columns="__target"),
+                test_df.drop(columns="__target"),
+                train_df["__target"],
+                test_df["__target"],
+                "temporal_holdout_by_step"
+            )
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=42,
+        stratify=y
+    )
+
+    return X_train, X_test, y_train, y_test, "stratified_random_holdout"
+
+
+def threshold_report(model, X_test, y_test):
+    y_prob = model.predict_proba(X_test)[:, 1]
+    report = []
+
+    for threshold in [0.20, 0.35, 0.50, 0.65, 0.80]:
+        y_pred = (y_prob >= threshold).astype(int)
+        tn, fp, fn, tp = confusion_matrix(y_test, y_pred, labels=[0, 1]).ravel()
+
+        report.append({
+            "threshold": threshold,
+            "precision": float(precision_score(y_test, y_pred, zero_division=0)),
+            "recall": float(recall_score(y_test, y_pred, zero_division=0)),
+            "f1_score": float(f1_score(y_test, y_pred, zero_division=0)),
+            "true_positives": int(tp),
+            "false_positives": int(fp),
+            "false_negatives": int(fn),
+            "true_negatives": int(tn)
+        })
+
+    return report
 
 
 def train_and_log_model(model_name, model, params, X_train, X_test, y_train, y_test):
@@ -165,13 +223,7 @@ def main():
             "Fraud and non-fraud both classes are required."
         )
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=0.2,
-        random_state=42,
-        stratify=y
-    )
+    X_train, X_test, y_train, y_test, validation_strategy = create_validation_split(X, y)
 
     fraud_count = int(y_train.sum())
     non_fraud_count = int(len(y_train) - fraud_count)
@@ -184,6 +236,7 @@ def main():
     print("Fraud count in training:", fraud_count)
     print("Non-fraud count in training:", non_fraud_count)
     print("scale_pos_weight:", scale_pos_weight)
+    print("Validation strategy:", validation_strategy)
 
     trained_models = []
 
@@ -281,11 +334,19 @@ def main():
         "retrained_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "dataset_path": str(DATA_PATH),
         "training_rows": int(len(df)),
+        "validation_strategy": validation_strategy,
         "features": list(X.columns),
         "target": "isFraud",
         "best_model_name": best_model_name,
         "best_metrics": best_metrics,
+        "threshold_report": threshold_report(best_model, X_test, y_test),
         "best_selection_score": best_score,
+        "model_governance_notes": [
+            "PaySim-style data is synthetic and should not be represented as live bank performance.",
+            "Temporal validation is preferred because fraud behavior changes over time.",
+            "Operating threshold should be selected using business cost of false positives and false negatives.",
+            "Deploy only after drift checks, data-quality checks, and analyst review workflow are in place."
+        ],
         "model_path": str(MODEL_PATH),
         "encoder_path": str(ENCODER_PATH)
     }

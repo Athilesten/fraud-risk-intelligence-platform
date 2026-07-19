@@ -10,6 +10,17 @@ import streamlit as st
 
 
 # -------------------------------
+# Page Config
+# -------------------------------
+
+st.set_page_config(
+    page_title="Fraud Risk Intelligence Dashboard",
+    page_icon="🚨",
+    layout="wide",
+)
+
+
+# -------------------------------
 # Paths and API Config
 # -------------------------------
 
@@ -23,6 +34,12 @@ KAFKA_LOG_PATH = PROCESSED_DIR / "kafka_scored_transactions.csv"
 RAW_DELTA_PATH = BASE_DIR / "data" / "delta" / "raw_transactions"
 CURATED_DELTA_PATH = BASE_DIR / "data" / "delta" / "curated_transactions"
 HADOOP_HOME_PATH = BASE_DIR / "hadoop"
+
+RUNNING_IN_DOCKER = (
+    Path("/.dockerenv").exists()
+    or os.environ.get("RUNNING_IN_DOCKER", "false").lower() == "true"
+)
+
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://127.0.0.1:8000")
 
 PREDICT_API_URL = f"{API_BASE_URL}/predict"
@@ -31,10 +48,38 @@ HEALTH_API_URL = f"{API_BASE_URL}/health"
 LOGS_API_URL = f"{API_BASE_URL}/prediction_logs"
 METRICS_API_URL = f"{API_BASE_URL}/monitoring/metrics"
 
-API_KEY = os.environ.get("FRAUD_API_KEY", "dev_fraud_api_key_123")
-API_HEADERS = {
-    "X-API-Key": API_KEY
-}
+PUBLIC_FASTAPI_DOCS_URL = os.environ.get(
+    "PUBLIC_FASTAPI_DOCS_URL",
+    "http://localhost:8000/docs"
+)
+
+PUBLIC_FASTAPI_HEALTH_URL = os.environ.get(
+    "PUBLIC_FASTAPI_HEALTH_URL",
+    "http://localhost:8000/health"
+)
+
+PUBLIC_PROMETHEUS_URL = os.environ.get(
+    "PUBLIC_PROMETHEUS_URL",
+    "http://localhost:9090"
+)
+
+PUBLIC_GRAFANA_URL = os.environ.get(
+    "PUBLIC_GRAFANA_URL",
+    "http://localhost:3000"
+)
+
+PUBLIC_STREAMLIT_URL = os.environ.get(
+    "PUBLIC_STREAMLIT_URL",
+    "http://localhost:8501"
+)
+
+API_KEY = os.environ.get("FRAUD_API_KEY")
+API_HEADERS = {"X-API-Key": API_KEY} if API_KEY else {}
+
+if not API_KEY:
+    st.warning(
+        "FRAUD_API_KEY is not configured. Protected API actions will fail until it is set."
+    )
 
 
 # -------------------------------
@@ -176,37 +221,147 @@ def load_delta_table_as_pandas(delta_path_str, limit_rows=100):
 
 def check_api_health():
     try:
-       response = requests.get(HEALTH_API_URL, timeout=3)
-       return response.status_code == 200
+        response = requests.get(HEALTH_API_URL, timeout=3)
+        return response.status_code == 200
+
     except requests.exceptions.RequestException:
         return False
 
 
-# -------------------------------
-# Page Config
-# -------------------------------
+def render_home_overview():
+    st.title("🚨 Real-Time Fraud Detection and Risk Intelligence Platform")
 
-st.set_page_config(
-    page_title="Fraud Risk Intelligence Dashboard",
-    page_icon="🚨",
-    layout="wide",
-)
+    st.markdown(
+        """
+        This is a production-style fraud detection system that scores financial
+        transactions using Machine Learning, rule-based risk logic, database logging,
+        real-time streaming, MLOps, and monitoring.
+        """
+    )
 
-st.title("🚨 Real-Time Fraud Detection and Risk Intelligence Platform")
+    st.info(
+        """
+        Main idea: A transaction enters the system, FastAPI scores it using ML and rules,
+        the result is stored in PostgreSQL, and the dashboard shows risk intelligence
+        and monitoring insights.
+        """
+    )
 
-st.markdown(
-    """
-    This dashboard scores transactions using a machine learning model,
-    stores fraud alerts, and supports batch CSV fraud prediction.
-    """
-)
+    st.subheader("System Overview")
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    col1.metric("Main UI", "Streamlit")
+    col2.metric("Backend", "FastAPI")
+    col3.metric("Database", "PostgreSQL")
+    col4.metric("Monitoring", "Prometheus + Grafana")
+
+    st.subheader("Project Flow")
+
+    st.markdown(
+        """
+        ```text
+        Transaction Input / CSV / Kafka Stream
+                    ↓
+        FastAPI Fraud Scoring Service
+                    ↓
+        Feature Engineering + ML Model + Rule Engine
+                    ↓
+        Fraud Probability + Risk Level + Final Decision
+                    ↓
+        PostgreSQL Prediction Logs
+                    ↓
+        Streamlit Dashboard + Grafana Monitoring
+        ```
+        """
+    )
+
+    st.subheader("Production Features")
+
+    feature_col1, feature_col2, feature_col3 = st.columns(3)
+
+    with feature_col1:
+        st.markdown(
+            """
+            **ML & Risk**
+            - Fraud probability prediction
+            - Rule-based risk scoring
+            - SHAP / feature explanation
+            - Batch prediction
+            """
+        )
+
+    with feature_col2:
+        st.markdown(
+            """
+            **Data & MLOps**
+            - PostgreSQL logs
+            - Kafka streaming
+            - Spark + Delta Lake
+            - MLflow + Airflow
+            """
+        )
+
+    with feature_col3:
+        st.markdown(
+            """
+            **Production**
+            - Docker Compose stack
+            - API key authentication
+            - Structured JSON logs
+            - Prometheus + Grafana
+            """
+        )
+
+    st.subheader("Service Links")
+
+    link_col1, link_col2, link_col3, link_col4 = st.columns(4)
+
+    with link_col1:
+        st.link_button("FastAPI Docs", PUBLIC_FASTAPI_DOCS_URL)
+
+    with link_col2:
+        st.link_button("API Health", PUBLIC_FASTAPI_HEALTH_URL)
+
+    with link_col3:
+        st.link_button("Prometheus", PUBLIC_PROMETHEUS_URL)
+
+    with link_col4:
+        st.link_button("Grafana", PUBLIC_GRAFANA_URL)
+
+    st.subheader("How to Demo This Project")
+
+    st.markdown(
+        """
+        **Recommended demo order:**
+
+        1. Start from this Streamlit dashboard.
+        2. Run a single high-risk fraud prediction.
+        3. Run batch CSV prediction.
+        4. Load PostgreSQL prediction logs.
+        5. Show API monitoring metrics.
+        6. Open Grafana to show production monitoring.
+        7. Show GitHub README, tests, and CI workflow.
+        """
+    )
+
+    st.success(
+        "This dashboard is the main control center. Other services support this application in the background."
+    )
+
+render_home_overview()
 
 api_running = check_api_health()
 
 if api_running:
     st.success("FastAPI server is running.")
 else:
-    st.error("FastAPI server is not running. Run this command first: uvicorn api.main:app --reload")
+    st.error(
+        "FastAPI server is not running. Start Docker Compose or run: uvicorn api.main:app --reload"
+    )
+
+st.divider()
+st.header("Fraud Risk Operations")
 
 
 # -------------------------------
@@ -298,8 +453,12 @@ with col2:
 
     if st.button("Predict Fraud Risk", key="single_prediction_button"):
         try:
-            response = requests.post(PREDICT_API_URL, json=transaction,headers=API_HEADERS,
- timeout=30)
+            response = requests.post(
+                PREDICT_API_URL,
+                json=transaction,
+                headers=API_HEADERS,
+                timeout=30
+            )
 
             if response.status_code == 200:
                 result = response.json()
@@ -611,7 +770,8 @@ if batch_uploaded_file is not None:
                         response = requests.post(
                             BATCH_API_URL,
                             json=payload,
-   			    headers=API_HEADERS, 			    timeout=120,
+                            headers=API_HEADERS,
+                            timeout=120,
                         )
 
                         if response.status_code == 200:
@@ -1057,7 +1217,7 @@ if st.button("Load PostgreSQL Prediction Logs"):
         response = requests.get(
             f"{LOGS_API_URL}?limit={log_limit}",
             headers=API_HEADERS,
-	    timeout=10
+            timeout=10
         )
 
         response.raise_for_status()
@@ -1142,121 +1302,134 @@ st.markdown(
     """
 )
 
-if st.button("Load / Refresh Delta Lake Tables", key="load_delta_lake_tables_button"):
-    st.session_state["load_delta_tables"] = True
+if RUNNING_IN_DOCKER:
+    st.info(
+        """
+        Delta Lake monitoring is disabled inside Docker dashboard mode because
+        starting Spark inside Streamlit Docker can be slow or unstable on Windows.
 
-if st.session_state.get("load_delta_tables", False):
+        Use this local command to validate Delta Lake tables:
 
-    with st.spinner("Loading Delta Lake tables using Spark..."):
-        raw_delta_result = load_delta_table_as_pandas(
-            str(RAW_DELTA_PATH),
-            limit_rows=100
-        )
-
-        curated_delta_result = load_delta_table_as_pandas(
-            str(CURATED_DELTA_PATH),
-            limit_rows=100
-        )
-
-    if not raw_delta_result["exists"]:
-        st.warning("Raw Delta table not found yet.")
-        st.info("Run Spark streaming and Kafka producer first.")
-
-    if not curated_delta_result["exists"]:
-        st.warning("Curated Delta table not found yet.")
-        st.info("Run Spark streaming and Kafka producer first.")
-
-    if raw_delta_result["error"]:
-        st.error("Error while reading Raw Delta table.")
-        st.write(raw_delta_result["error"])
-
-    if curated_delta_result["error"]:
-        st.error("Error while reading Curated Delta table.")
-        st.write(curated_delta_result["error"])
-
-    if (
-        raw_delta_result["exists"]
-        and curated_delta_result["exists"]
-        and raw_delta_result["error"] is None
-        and curated_delta_result["error"] is None
-    ):
-        raw_delta_df = raw_delta_result["data"]
-        curated_delta_df = curated_delta_result["data"]
-
-        d1, d2, d3 = st.columns(3)
-
-        d1.metric(
-            "Raw Delta Transactions",
-            raw_delta_result["count"]
-        )
-
-        d2.metric(
-            "Curated Delta Transactions",
-            curated_delta_result["count"]
-        )
-
-        d3.metric(
-            "Latest Rows Displayed",
-            len(curated_delta_df)
-        )
-
-        st.subheader("Latest Raw Delta Transactions")
-        st.dataframe(raw_delta_df, use_container_width=True)
-
-        st.subheader("Latest Curated Delta Transactions")
-        st.dataframe(curated_delta_df, use_container_width=True)
-
-        if not curated_delta_df.empty and "type" in curated_delta_df.columns and "amount" in curated_delta_df.columns:
-            avg_amount_by_type = (
-                curated_delta_df.groupby("type")["amount"]
-                .mean()
-                .reset_index()
-            )
-
-            fig_delta_amount = px.bar(
-                avg_amount_by_type,
-                x="type",
-                y="amount",
-                title="Average Transaction Amount by Type from Curated Delta Table"
-            )
-
-            st.plotly_chart(fig_delta_amount, use_container_width=True)
-
-        risk_feature_columns = [
-            "balance_diff_orig",
-            "balance_diff_dest",
-            "amount_to_oldbalance_ratio",
-            "is_zero_balance_after_txn",
-            "sender_balance_mismatch",
-            "receiver_balance_mismatch"
-        ]
-
-        available_risk_columns = [
-            col for col in risk_feature_columns
-            if col in curated_delta_df.columns
-        ]
-
-        if available_risk_columns:
-            st.subheader("Curated Fraud-Risk Feature Summary")
-
-            feature_summary = (
-                curated_delta_df[available_risk_columns]
-                .mean(numeric_only=True)
-                .reset_index()
-            )
-
-            feature_summary.columns = ["Feature", "Average Value"]
-
-            st.dataframe(feature_summary, use_container_width=True)
-
-            fig_feature_summary = px.bar(
-                feature_summary,
-                x="Feature",
-                y="Average Value",
-                title="Average Fraud-Risk Engineered Features from Delta Lake"
-            )
-
-            st.plotly_chart(fig_feature_summary, use_container_width=True)
+        `python streaming\\read_delta_tables.py`
+        """
+    )
 
 else:
-    st.info("Click the button above to load Delta Lake monitoring data.")
+    if st.button("Load / Refresh Delta Lake Tables", key="load_delta_lake_tables_button"):
+        st.session_state["load_delta_tables"] = True
+
+    if st.session_state.get("load_delta_tables", False):
+
+        with st.spinner("Loading Delta Lake tables using Spark..."):
+            raw_delta_result = load_delta_table_as_pandas(
+                str(RAW_DELTA_PATH),
+                limit_rows=100
+            )
+
+            curated_delta_result = load_delta_table_as_pandas(
+                str(CURATED_DELTA_PATH),
+                limit_rows=100
+            )
+
+        if not raw_delta_result["exists"]:
+            st.warning("Raw Delta table not found yet.")
+            st.info("Run Spark streaming and Kafka producer first.")
+
+        if not curated_delta_result["exists"]:
+            st.warning("Curated Delta table not found yet.")
+            st.info("Run Spark streaming and Kafka producer first.")
+
+        if raw_delta_result["error"]:
+            st.error("Error while reading Raw Delta table.")
+            st.write(raw_delta_result["error"])
+
+        if curated_delta_result["error"]:
+            st.error("Error while reading Curated Delta table.")
+            st.write(curated_delta_result["error"])
+
+        if (
+            raw_delta_result["exists"]
+            and curated_delta_result["exists"]
+            and raw_delta_result["error"] is None
+            and curated_delta_result["error"] is None
+        ):
+            raw_delta_df = raw_delta_result["data"]
+            curated_delta_df = curated_delta_result["data"]
+
+            d1, d2, d3 = st.columns(3)
+
+            d1.metric(
+                "Raw Delta Transactions",
+                raw_delta_result["count"]
+            )
+
+            d2.metric(
+                "Curated Delta Transactions",
+                curated_delta_result["count"]
+            )
+
+            d3.metric(
+                "Latest Rows Displayed",
+                len(curated_delta_df)
+            )
+
+            st.subheader("Latest Raw Delta Transactions")
+            st.dataframe(raw_delta_df, use_container_width=True)
+
+            st.subheader("Latest Curated Delta Transactions")
+            st.dataframe(curated_delta_df, use_container_width=True)
+
+            if not curated_delta_df.empty and "type" in curated_delta_df.columns and "amount" in curated_delta_df.columns:
+                avg_amount_by_type = (
+                    curated_delta_df.groupby("type")["amount"]
+                    .mean()
+                    .reset_index()
+                )
+
+                fig_delta_amount = px.bar(
+                    avg_amount_by_type,
+                    x="type",
+                    y="amount",
+                    title="Average Transaction Amount by Type from Curated Delta Table"
+                )
+
+                st.plotly_chart(fig_delta_amount, use_container_width=True)
+
+            risk_feature_columns = [
+                "balance_diff_orig",
+                "balance_diff_dest",
+                "amount_to_oldbalance_ratio",
+                "is_zero_balance_after_txn",
+                "sender_balance_mismatch",
+                "receiver_balance_mismatch"
+            ]
+
+            available_risk_columns = [
+                col for col in risk_feature_columns
+                if col in curated_delta_df.columns
+            ]
+
+            if available_risk_columns:
+                st.subheader("Curated Fraud-Risk Feature Summary")
+
+                feature_summary = (
+                    curated_delta_df[available_risk_columns]
+                    .mean(numeric_only=True)
+                    .reset_index()
+                )
+
+                feature_summary.columns = ["Feature", "Average Value"]
+
+                st.dataframe(feature_summary, use_container_width=True)
+
+                fig_feature_summary = px.bar(
+                    feature_summary,
+                    x="Feature",
+                    y="Average Value",
+                    title="Average Fraud-Risk Engineered Features from Delta Lake"
+                )
+
+                st.plotly_chart(fig_feature_summary, use_container_width=True)
+
+    else:
+        st.info("Click the button above to load Delta Lake monitoring data.")

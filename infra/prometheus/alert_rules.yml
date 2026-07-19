@@ -1,0 +1,29 @@
+groups:
+  - name: fraud-platform-api
+    rules:
+      - alert: FraudApiHighErrorRate
+        expr: sum(rate(fraud_api_http_requests_total{status_code=~"5.."}[5m])) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Fraud API is returning server errors"
+          description: "Investigate FastAPI logs and recent /predict or /predict_batch failures."
+
+      - alert: FraudApiHighP95Latency
+        expr: histogram_quantile(0.95, sum(rate(fraud_api_http_request_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Fraud API p95 latency is above 2 seconds"
+          description: "Check model loading, database logging latency, and container CPU/memory."
+
+      - alert: FraudHighRiskSpike
+        expr: sum(rate(fraud_predictions_total{risk_level="HIGH"}[10m])) > 0.2
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High-risk fraud predictions increased"
+          description: "Review recent PostgreSQL audit logs and Kafka scored transactions."

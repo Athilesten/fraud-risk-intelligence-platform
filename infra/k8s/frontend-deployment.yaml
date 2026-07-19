@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fraud-frontend
+  namespace: fraud-risk
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fraud-frontend
+  template:
+    metadata:
+      labels:
+        app: fraud-frontend
+    spec:
+      containers:
+        - name: fraud-frontend
+          image: fraud-risk-frontend:CHANGE_ME
+          ports:
+            - containerPort: 80

@@ -32,9 +32,36 @@ services:
       PYTHONPATH: "/app/src"
       DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@fraud-postgres:5432/${POSTGRES_DB}"
       FRAUD_API_KEY: "${FRAUD_API_KEY}"
+      JWT_SECRET_KEY: "${JWT_SECRET_KEY}"
+      JWT_EXPIRES_MINUTES: "${JWT_EXPIRES_MINUTES}"
+      DEMO_ADMIN_EMAIL: "${DEMO_ADMIN_EMAIL}"
+      DEMO_ADMIN_PASSWORD: "${DEMO_ADMIN_PASSWORD}"
+      DEMO_ADMIN_ROLE: "${DEMO_ADMIN_ROLE:-admin}"
+      FRAUD_CORS_ORIGINS: "${FRAUD_CORS_ORIGINS}"
+      KAFKA_BOOTSTRAP_SERVERS: "${KAFKA_BOOTSTRAP_SERVERS}"
+      KAFKA_RAW_TOPIC: "${KAFKA_RAW_TOPIC}"
+      KAFKA_SCORED_TOPIC: "${KAFKA_SCORED_TOPIC}"
+      KAFKA_ERRORS_TOPIC: "${KAFKA_ERRORS_TOPIC}"
+      KAFKA_ERROR_TOPIC: "${KAFKA_ERROR_TOPIC}"
+      DATA_LAKE_PATH: "/app/data/delta"
     depends_on:
       fraud-postgres:
         condition: service_healthy
+    restart: unless-stopped
+
+  fraud-frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.frontend
+      args:
+        VITE_API_BASE_URL: "http://localhost:8000"
+        VITE_API_KEY: "${VITE_API_KEY}"
+        VITE_ENABLE_AUTH: "${VITE_ENABLE_AUTH}"
+    container_name: fraud_react_frontend
+    ports:
+      - "3001:80"
+    depends_on:
+      - fraud-api
     restart: unless-stopped
 
   fraud-dashboard:
@@ -62,6 +89,7 @@ services:
       - "9090:9090"
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
       - prometheus_data:/prometheus
     depends_on:
       - fraud-api
@@ -77,6 +105,8 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD}"
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
     restart: unless-stopped

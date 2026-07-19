@@ -1,33 +1,59 @@
-name: CI - Unit Tests
+name: fraud-risk-platform-ci
 
 on:
   push:
+    branches: ["main", "master"]
   pull_request:
-  workflow_dispatch:
-
-permissions:
-  contents: read
 
 jobs:
-  unit-tests:
+  backend:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout project code
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"
-          cache-dependency-path: requirements-ci.txt
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-ci.txt
+          pip install -r streaming-requirements.txt
 
-      - name: Run unit tests
+      - name: Compile backend and streaming scripts
         run: |
-          python -m pytest tests -v
+          python -m py_compile api/main.py
+          python -m py_compile streaming/kafka_producer.py
+          python -m py_compile streaming/kafka_scoring_consumer.py
+          python -m py_compile streaming/create_kafka_topics.py
+          python -m py_compile streaming/spark_streaming_delta_pipeline.py
+          python -m py_compile streaming/spark_scored_delta_pipeline.py
+          python -m py_compile streaming/read_delta_summary.py
+
+      - name: Run tests
+        run: python -m pytest -v
+
+      - name: Validate Compose files
+        run: |
+          docker compose -f docker-compose.app.yml config
+          docker compose -f docker-compose.streaming.yml config
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build

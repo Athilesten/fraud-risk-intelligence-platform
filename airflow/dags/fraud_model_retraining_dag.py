@@ -161,7 +161,7 @@ with DAG(
     default_args=default_args,
     description="Automated fraud model retraining pipeline with validation and artifact checks",
     start_date=datetime(2026, 1, 1),
-    schedule_interval="@weekly",
+    schedule="@weekly",
     catchup=False,
     tags=["fraud-detection", "mlops", "retraining"],
 ) as dag:

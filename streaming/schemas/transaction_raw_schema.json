@@ -1,0 +1,33 @@
+{
+  "title": "transactions.raw event",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_time",
+    "source_dataset",
+    "step",
+    "type",
+    "amount",
+    "oldbalanceOrg",
+    "newbalanceOrig",
+    "oldbalanceDest",
+    "newbalanceDest",
+    "isFlaggedFraud"
+  ],
+  "properties": {
+    "event_id": { "type": "string" },
+    "event_time": { "type": "string" },
+    "source_dataset": { "type": "string" },
+    "step": { "type": "number" },
+    "type": { "type": "string" },
+    "amount": { "type": "number" },
+    "sender_id": { "type": "string" },
+    "receiver_id": { "type": "string" },
+    "oldbalanceOrg": { "type": "number" },
+    "newbalanceOrig": { "type": "number" },
+    "oldbalanceDest": { "type": "number" },
+    "newbalanceDest": { "type": "number" },
+    "isFlaggedFraud": { "type": "number" },
+    "isFraud": { "type": "number" }
+  }
+}

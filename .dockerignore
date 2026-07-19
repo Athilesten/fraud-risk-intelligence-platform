@@ -1,4 +1,7 @@
 venv/
+node_modules/
+frontend/node_modules/
+frontend/dist/
 __pycache__/
 *.pyc
 
@@ -8,6 +11,7 @@ data/delta/
 data/checkpoints/
 
 airflow/logs/
+logs/
 mlruns/
 mlflow.db
 

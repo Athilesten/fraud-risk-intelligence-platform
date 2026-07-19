@@ -1,0 +1,22 @@
+name: docker-build-validation
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Docker Compose config
+        run: |
+          docker compose -f docker-compose.app.yml config
+          docker compose -f docker-compose.streaming.yml config
+
+      - name: Build FastAPI image
+        run: docker build -f Dockerfile.api -t fraud-risk-api:ci .
+
+      - name: Build React frontend image
+        run: docker build -f frontend/Dockerfile.frontend -t fraud-risk-frontend:ci .

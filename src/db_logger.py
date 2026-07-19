@@ -1,9 +1,15 @@
 import os
 from datetime import datetime
 
-import psycopg2
-from psycopg2.extras import Json, RealDictCursor
 from decimal import Decimal
+
+try:
+    import psycopg2
+    from psycopg2.extras import Json, RealDictCursor
+except ImportError:
+    psycopg2 = None
+    Json = lambda value: value
+    RealDictCursor = None
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
@@ -12,6 +18,9 @@ DATABASE_URL = os.environ.get(
 
 
 def get_connection():
+    if psycopg2 is None:
+        raise RuntimeError("psycopg2 is not installed. Install psycopg2-binary to enable PostgreSQL logging.")
+
     return psycopg2.connect(DATABASE_URL)
 
 
@@ -21,7 +30,7 @@ def init_db():
     This is used by FastAPI when the app starts.
     """
 
-    create_table_query = """
+    create_prediction_table_query = """
     CREATE TABLE IF NOT EXISTS fraud_predictions (
         id SERIAL PRIMARY KEY,
         step INTEGER,
@@ -47,10 +56,10 @@ def init_db():
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute(create_table_query)
+                cur.execute(create_prediction_table_query)
                 conn.commit()
 
-        print("PostgreSQL table fraud_predictions is ready.")
+        print("PostgreSQL fraud prediction table is ready.")
 
     except Exception as e:
         print(f"Database initialization failed: {e}")
@@ -136,6 +145,8 @@ def log_prediction(transaction, prediction, explanation=None):
     except Exception as e:
         print(f"Prediction logging failed: {e}")
         return None
+
+
 def serialize_db_value(value):
     """
     Convert PostgreSQL values into JSON-safe Python values.

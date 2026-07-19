@@ -1,0 +1,40 @@
+{
+  "title": "transactions.scored event",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_time",
+    "source_dataset",
+    "type",
+    "amount",
+    "prediction",
+    "scored_at"
+  ],
+  "properties": {
+    "event_id": { "type": "string" },
+    "event_time": { "type": "string" },
+    "source_dataset": { "type": "string" },
+    "type": { "type": "string" },
+    "amount": { "type": "number" },
+    "prediction": {
+      "type": "object",
+      "required": [
+        "fraud_probability",
+        "risk_level",
+        "rule_risk_score",
+        "rule_risk_level",
+        "final_decision",
+        "triggered_rules"
+      ],
+      "properties": {
+        "fraud_probability": { "type": "number" },
+        "risk_level": { "type": "string" },
+        "rule_risk_score": { "type": "number" },
+        "rule_risk_level": { "type": "string" },
+        "final_decision": { "type": "string" },
+        "triggered_rules": { "type": "array" }
+      }
+    },
+    "scored_at": { "type": "string" }
+  }
+}

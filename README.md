@@ -1,357 +1,281 @@
 # Real-Time Fraud Detection and Risk Intelligence Platform
 
-## Project Overview
+An industry-style fintech fraud risk platform with a polished React product UI, FastAPI ML scoring backend, rule engine, PostgreSQL audit logging, Kafka streaming ingestion, PySpark Structured Streaming, local Delta Lake bronze/silver/gold tables, Docker deployment, Prometheus/Grafana monitoring, and enterprise cloud-production blueprint.
 
-This project is an end-to-end fraud detection and risk intelligence platform built for detecting suspicious financial transactions using machine learning, rule-based risk scoring, batch prediction, real-time simulation, Kafka streaming, and analyst dashboards.
+This is not only a machine learning notebook and not only a Streamlit dashboard. The React website is the main product interface. Streamlit remains available as an internal analyst dashboard.
 
-The system supports:
-- Single transaction fraud prediction
-- Batch CSV fraud scoring
-- Fraud alert logging
-- Rule-based risk engine
-- SHAP/feature explanation
-- Real-time transaction simulation
-- Kafka-based streaming pipeline
-- MLflow experiment tracking
-- Streamlit dashboard for analysts
+## Core Capabilities
 
----
+- Single transaction fraud scoring through FastAPI
+- Batch CSV fraud scoring with required-column validation
+- ML fraud probability, risk level, rule score, final decision, and triggered rules
+- Model explanation/top features when the explanation service returns them
+- PostgreSQL prediction audit logs
+- API metrics for request count, errors, average latency, max latency, and endpoint breakdown
+- Kafka raw/scored transaction topics
+- PySpark Structured Streaming pipelines
+- Local Delta Lake bronze/silver/gold architecture
+- Optional local JWT login flow plus service API key support
+- Alembic migration path for PostgreSQL
+- Prometheus metrics endpoint and Grafana monitoring
+- Docker Compose stack for local presentation
+- RBAC permission model for demo JWT users and service API keys
+- Locust load-testing workload
+- Cloud, security, compliance, model governance, Kubernetes, and Terraform blueprints
 
-## Business Problem
-
-Financial institutions, fintech companies, and payment platforms need to identify suspicious transactions quickly. Fraud datasets are highly imbalanced, so accuracy alone is not suitable. This project focuses on fraud probability, PR-AUC, recall, rule explanations, and real-time alert monitoring.
-
----
-
-## Tech Stack
-
-| Area | Tools |
-|---|---|
-| Programming | Python |
-| Data Processing | Pandas, NumPy |
-| Machine Learning | Scikit-learn, XGBoost |
-| Model Tracking | MLflow |
-| Explainability | SHAP / Feature Importance |
-| API | FastAPI |
-| Dashboard | Streamlit, Plotly |
-| Streaming | Kafka |
-| Container | Docker |
-| Storage | CSV logs |
-
----
-
-## Project Architecture
+## Architecture
 
 ```text
-Transaction Input / CSV / Simulator / Kafka Producer
-              ↓
-        FastAPI Scoring API
-              ↓
-    ML Model + Rule Engine
-              ↓
-Fraud Probability + Rule Score + Final Decision
-              ↓
- Streamlit Dashboard + Alert Logs
-
- fraud-risk-intelligence-platform/
-│
-├── api/
-│   └── main.py
-│
-├── dashboard/
-│   └── app.py
-│
-├── data/
-│   ├── raw/
-│   │   └── paysim.csv
-│   └── processed/
-│       ├── fraud_alerts.csv
-│       ├── batch_predictions.csv
-│       ├── realtime_simulation_log.csv
-│       └── kafka_scored_transactions.csv
-│
-├── models/
-│   ├── fraud_model.pkl
-│   └── label_encoder.pkl
-│
-├── src/
-│   ├── data_preprocessing.py
-│   ├── feature_engineering.py
-│   ├── train_model.py
-│   ├── train_model_mlflow.py
-│   ├── train_model_compare_mlflow.py
-│   ├── predict.py
-│   ├── explain.py
-│   └── rules_engine.py
-│
-├── streaming/
-│   ├── transaction_simulator.py
-│   ├── kafka_producer.py
-│   └── kafka_consumer.py
-│
-├── docker-compose.yml
-├── requirements.txt
-└── README.md
-
-Dataset
-
-This project uses PaySim-style transaction data.
-
-Required columns:
-
-step, type, amount, oldbalanceOrg, newbalanceOrig,
-oldbalanceDest, newbalanceDest, isFraud, isFlaggedFraud
-
-Target column:
-
-isFraud
-
-
-Model Training
-
-Train basic model:
-
-python src/train_model.py
-
-Train model with MLflow tracking:
-
-python src/train_model_mlflow.py
-
-Compare Random Forest and XGBoost automatically:
-
-python src/train_model_compare_mlflow.py
-
-The best model is selected using:
-
-Selection Score = 70% PR-AUC + 30% Recall
-
-The best model is saved as:
-
-models/fraud_model.pkl
-
-Run FastAPI
-uvicorn api.main:app --reload
-
-API docs:
-
-http://127.0.0.1:8000/docs
-
-
-Run Streamlit Dashboard
-streamlit run dashboard/app.py
-
-Dashboard URL:
-
-http://localhost:8501
-
-Run Real-Time Simulator
-python streaming/transaction_simulator.py
-
-This generates live-style transactions and saves scored results to:
-
-data/processed/realtime_simulation_log.csv
-
-Run Kafka Streaming
-
-Start Kafka:
-
-docker compose up -d
-
-Start FastAPI:
-
-uvicorn api.main:app --reload
-
-Start Kafka consumer:
-
-python streaming/kafka_consumer.py
-
-Start Kafka producer:
-
-python streaming/kafka_producer.py
-
-Kafka scored results are saved to:
-
-data/processed/kafka_scored_transactions.csv
-
-Stop Kafka:
-
-docker compose down
-
-
-MLflow UI
-
-Run:
-
-mlflow ui --backend-store-uri sqlite:///mlflow.db
-
-Open:
-
-http://127.0.0.1:5000
-Evaluation Metrics
-
-This project uses:
-
-ROC-AUC
-PR-AUC
-Precision
-Recall
-F1-score
-Rule risk score
-Final decision count
-Batch prediction risk distribution
-Kafka streaming decision distribution
-
-Fraud detection is imbalanced, so PR-AUC and recall are more important than accuracy.
-
-Rule Engine
-
-The rule engine checks:
-
-High value transaction
-Sender balance becoming zero
-Risky transaction type
-System flagged fraud
-Sender balance mismatch
-Receiver balance mismatch
-
-The final decision is:
-
-APPROVE
-MANUAL REVIEW
-BLOCK / MANUAL REVIEW
-Dashboard Features
-
-The Streamlit dashboard supports:
-
-Single transaction prediction
-Fraud probability
-Rule risk score
-Triggered fraud rules
-Final decision
-Model explanation
-Batch CSV prediction
-Batch prediction history
-Real-time simulator monitoring
-Kafka streaming monitoring
-CSV download
-
-## Production-Style Docker Stack
-
-This project includes a production-style local Docker stack with:
-
-- FastAPI fraud scoring service
-- Streamlit risk intelligence dashboard
-- PostgreSQL prediction logging database
-- Prometheus metrics collection
-- Grafana monitoring dashboard
-- API key authentication
-- Structured JSON logging
-- Pytest unit tests
-- GitHub Actions CI workflow
-
-### Environment Setup
-
-Create a local `.env` file using `.env.example`:
-
-```bash
-POSTGRES_USER=fraud_user
-POSTGRES_PASSWORD=fraud_password
-POSTGRES_DB=fraud_db
-FRAUD_API_KEY=dev_fraud_api_key_123
-GRAFANA_ADMIN_USER=admin
-GRAFANA_ADMIN_PASSWORD=admin
-API_BASE_URL=http://fraud-api:8000
-
-
-| Service             | URL                                                            |
-| ------------------- | -------------------------------------------------------------- |
-| FastAPI Health      | [http://localhost:8000/health](http://localhost:8000/health)   |
-| FastAPI Docs        | [http://localhost:8000/docs](http://localhost:8000/docs)       |
-| Prometheus Metrics  | [http://localhost:8000/metrics](http://localhost:8000/metrics) |
-| Streamlit Dashboard | [http://localhost:8501](http://localhost:8501)                 |
-| Prometheus UI       | [http://localhost:9090](http://localhost:9090)                 |
-| Grafana UI          | [http://localhost:3000](http://localhost:3000)                 |
-
-PI Key Authentication
-
-Protected endpoints require:
-
-X-API-Key: dev_fraud_api_key_123
-
-Protected endpoints:
-
-POST /predict
-POST /predict_batch
-GET /prediction_logs
-GET /monitoring/metrics
-
-Public endpoints:
-
-GET /
-GET /health
-GET /metrics
-Prometheus + Grafana Monitoring
-
-FastAPI exposes Prometheus metrics at:
-
-http://localhost:8000/metrics
-
-Prometheus scrapes the API and Grafana visualizes:
-
-Total API requests
-Request rate
-Average latency
-95th percentile latency
-Total fraud predictions
-Predictions by risk level
-Predictions by final decision
-Run Unit Tests
-python -m pytest -v
-Stop Stack
-docker compose -f docker-compose.app.yml down
-
-Save and close.
-
----
-
-# Step 38.9: Run tests locally
-
-Run:
-
-```cmd
-python -m pytest -v
-
-Expected:
-
-6 passed
+React Frontend -> FastAPI -> ML Model + Rule Engine -> PostgreSQL -> Prometheus/Grafana
+Kafka Raw Topic -> Kafka Scoring Consumer -> FastAPI -> Kafka Scored Topic -> PySpark -> Delta Lake
+```
 
 ## Documentation
 
-Additional project documentation:
-
+- [Big Data Streaming Architecture](docs/big_data_streaming_architecture.md)
+- [Runbook](docs/runbook.md)
+- [Interview Demo Script](docs/interview_demo_script.md)
+- [Industry Architecture](docs/industry_architecture.md)
+- [Enterprise Architecture](docs/enterprise_architecture.md)
+- [Cloud Production Plan](docs/cloud_production_plan.md)
+- [Deployment Options](docs/deployment_options.md)
+- [Managed Kafka Plan](docs/managed_kafka_plan.md)
+- [Managed PostgreSQL Plan](docs/managed_postgres_plan.md)
+- [Cloud Data Lake Plan](docs/cloud_datalake_plan.md)
+- [Auth And RBAC Plan](docs/auth_rbac_plan.md)
+- [Secrets Management Plan](docs/secrets_management_plan.md)
+- [Model Governance Plan](docs/model_governance_plan.md)
+- [Security Compliance Review](docs/security_compliance_review.md)
+- [CI/CD Plan](docs/ci_cd_plan.md)
+- [Observability Plan](docs/observability_plan.md)
+- [Load Testing Report Template](docs/load_testing_report_template.md)
+- [Alerting Strategy](docs/alerting_strategy.md)
+- [Limitations And Future Scope](docs/limitations_and_future_scope.md)
 - [Production Architecture](docs/production_architecture.md)
 - [Interview Explanation](docs/interview_explanation.md)
 
-## Final Project Summary
+## Tech Stack
 
-This project is a production-style Real-Time Fraud Detection and Risk Intelligence Platform.
+| Layer | Technology |
+|---|---|
+| Frontend | React, Vite, Axios, Recharts |
+| Backend | FastAPI, Pydantic, API key authentication |
+| ML | Scikit-learn/XGBoost model artifacts, feature engineering, rule engine |
+| Operational Storage | PostgreSQL prediction audit logs |
+| Streaming | Kafka, kafka-python |
+| Data Lake | PySpark Structured Streaming, Delta Lake |
+| Monitoring | Prometheus metrics, Grafana dashboard |
+| Internal Dashboard | Streamlit |
+| Deployment | Docker Compose, nginx frontend container |
+| Enterprise Blueprint | Terraform, Kubernetes manifests, cloud production docs |
+| Load Testing | Locust |
 
-It includes:
+## Environment
 
-- Machine learning fraud prediction
-- Rule-based fraud risk scoring
-- FastAPI backend
-- Streamlit dashboard
-- PostgreSQL prediction logging
-- Kafka streaming
-- Spark Structured Streaming
-- Delta Lake storage
-- MLflow experiment tracking
-- Airflow retraining pipeline
-- Docker Compose production stack
-- API key authentication
-- Structured JSON logging
-- Prometheus metrics
-- Grafana monitoring dashboard
-- Pytest unit tests
-- GitHub Actions CI
+Use Python 3.11 for the local ML and Spark environment. Python 3.13 can force older ML packages such as NumPy 1.x to build from source on Windows.
+
+Copy `.env.example` to `.env` for local development.
+
+Local demo API key:
+
+```text
+dev_fraud_api_key_123
+```
+
+Protected API requests use:
+
+```text
+X-API-Key: dev_fraud_api_key_123
+```
+
+Important local variables:
+
+```text
+VITE_API_BASE_URL=http://localhost:8000
+VITE_API_KEY=dev_fraud_api_key_123
+KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+KAFKA_RAW_TOPIC=transactions.raw
+KAFKA_SCORED_TOPIC=transactions.scored
+KAFKA_ERROR_TOPIC=transactions.errors
+DATA_LAKE_PATH=data/delta
+JWT_SECRET_KEY=local_demo_jwt_secret_change_me
+DEMO_ADMIN_EMAIL=admin@fraud.local
+DEMO_ADMIN_PASSWORD=admin123
+DEMO_ADMIN_ROLE=admin
+```
+
+## Local Working Demo
+
+The local demo requires no cloud credentials.
+
+```cmd
+cd D:\fraud-risk-intelligence-platform
+py -3.11 -m venv venv
+call venv\Scripts\activate.bat
+python -m pip install --upgrade pip setuptools wheel
+pip install -r requirements-ci.txt
+pip install -r streaming-requirements.txt
+cd frontend
+npm install
+npm run build
+cd ..
+scripts\validate_project.bat
+scripts\full_demo.bat
+```
+
+## Run App Stack
+
+```cmd
+cd D:\fraud-risk-intelligence-platform
+scripts\start_app_stack.bat
+```
+
+## Run Streaming Stack
+
+```cmd
+cd D:\fraud-risk-intelligence-platform
+scripts\start_streaming_stack.bat
+timeout /t 60
+scripts\create_kafka_topics.bat
+```
+
+If `data/raw/paysim.csv` is missing:
+
+```cmd
+.\venv\Scripts\python.exe scripts\generate_sample_paysim.py --rows 200
+```
+
+## Streaming Demo Commands
+
+```cmd
+cd D:\fraud-risk-intelligence-platform
+scripts\run_kafka_demo.bat
+```
+
+Optional Spark pipelines:
+
+```cmd
+cd D:\fraud-risk-intelligence-platform
+scripts\run_spark_delta_demo.bat
+```
+
+Full local interview demo after dependencies are installed:
+
+```cmd
+cd D:\fraud-risk-intelligence-platform
+scripts\full_demo.bat
+```
+
+## Database Migrations
+
+The app still creates the prediction table at startup as a local fallback. The professional migration path is Alembic:
+
+```cmd
+cd D:\fraud-risk-intelligence-platform
+set DATABASE_URL=postgresql://fraud_user:fraud_password@localhost:5433/fraud_db
+.\venv\Scripts\alembic.exe upgrade head
+```
+
+## Service URLs
+
+| Service | URL |
+|---|---|
+| React product frontend | http://localhost:3001 |
+| FastAPI backend | http://localhost:8000 |
+| FastAPI docs | http://localhost:8000/docs |
+| Streamlit internal dashboard | http://localhost:8501 |
+| Prometheus | http://localhost:9090 |
+| Grafana | http://localhost:3000 |
+| Kafka UI | http://localhost:8080 |
+
+## API Endpoints
+
+Public:
+
+- `GET /`
+- `GET /health`
+- `GET /metrics`
+- `GET /docs`
+- `POST /auth/login`
+
+Protected:
+
+- `GET /auth/me`
+- `POST /predict`
+- `POST /predict_batch`
+- `GET /prediction_logs?limit=20`
+- `GET /monitoring/metrics`
+- `GET /streaming/status`
+- `GET /streaming/recent-scored`
+- `GET /datalake/summary`
+
+## Batch CSV Columns
+
+The frontend validates these required columns before scoring:
+
+```text
+step,type,amount,oldbalanceOrg,newbalanceOrig,oldbalanceDest,newbalanceDest,isFlaggedFraud
+```
+
+Sample file:
+
+```text
+examples/sample_batch_transactions.csv
+```
+
+## Interview Positioning
+
+Present this as an industry-style fraud risk intelligence platform with React SaaS frontend, FastAPI ML backend, rule engine, PostgreSQL audit logs, Kafka real-time ingestion, PySpark Structured Streaming, Delta Lake bronze/silver/gold architecture, Dockerized local deployment, and Prometheus/Grafana monitoring.
+
+Do not overclaim it as a deployed bank production system. It is a production-style local implementation designed for portfolio and interview demonstration.
+
+## Validation Commands
+
+```cmd
+cd D:\fraud-risk-intelligence-platform\frontend
+npm install
+npm run build
+
+cd D:\fraud-risk-intelligence-platform
+python -m py_compile api\main.py
+python -m py_compile streaming\kafka_producer.py
+python -m py_compile streaming\kafka_scoring_consumer.py
+python -m py_compile streaming\spark_streaming_delta_pipeline.py
+python -m py_compile streaming\spark_scored_delta_pipeline.py
+docker compose -f docker-compose.app.yml config
+docker compose -f docker-compose.streaming.yml config
+scripts\validate_project.bat
+```
+
+## Load Testing
+
+Load testing is optional and is not required by CI.
+
+```cmd
+cd D:\fraud-risk-intelligence-platform
+call venv\Scripts\activate.bat
+pip install locust
+locust -f load_tests\locustfile.py --host=http://localhost:8000
+```
+
+Headless run:
+
+```cmd
+locust -f load_tests\locustfile.py --host=http://localhost:8000 --users 20 --spawn-rate 5 --run-time 2m --headless
+```
+
+## Enterprise Production Blueprint
+
+The repository includes safe, non-credentialed templates for:
+
+- AWS/Azure/GCP production architecture
+- Managed Kafka
+- Managed PostgreSQL
+- Cloud data lake
+- OAuth/SSO and RBAC
+- Secret manager integration
+- Kubernetes deployment starting point
+- Terraform structure
+- Model governance and compliance review
+
+These assets are for planning and interview architecture explanation. They are not a fully deployed bank production system.
